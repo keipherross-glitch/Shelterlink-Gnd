@@ -47,15 +47,26 @@ struct Shelter {
 // Insert by name. Take root by reference (TreeNode*&) so the new node is linked in.
 // Decide what to do with a duplicate name.
 void insertEvacuee(TreeNode*& root, const Evacuee& e) {
-    // TODO (recursive): empty spot -> create node; else go left or right
+    if (root == nullptr) {
+        root = new TreeNode{e, nullptr, nullptr};
+    } else if (e.name < root->data.name) {
+        insertEvacuee(root->left, e);
+    } else if (e.name > root->data.name) {
+        insertEvacuee(root->right, e);
+    } else {
+        cout << "Already registered: " << e.name << endl;
+    }
 }
 
-// Return a pointer to the matching node, or nullptr if not found.
-TreeNode* searchEvacuee(TreeNode* root, const string& name) {
-    // TODO (recursive)
-    return nullptr;
-}
 
+
+// Return a pointer to the matching node, or nullptr if not found
+   TreeNode* searchEvacuee(TreeNode* root, const string& name) {
+    if (root == nullptr) return nullptr;       // not found
+    if (name == root->data.name) return root;  // found
+    if (name < root->data.name) return searchEvacuee(root->left, name);
+    return searchEvacuee(root->right, name);
+}
 // ---------- Step 2: Queue ----------
 void enqueue(Queue& q, const string& name) {
     // TODO: add at the back (watch the empty-queue case)
@@ -95,8 +106,22 @@ int main() {
     TreeNode* root = nullptr;
     Shelter* shelters = nullptr;
 
-    // TODO: menu loop
-    //  1. Add shelter   2. Register evacuee   3. Search by name
-    //  4. Discharge evacuee   5. Show shelters   0. Exit
+    // ---- temporary BST test ----
+    insertEvacuee(root, {"Linda", 34, 1});
+    insertEvacuee(root, {"Brian", 52, 1});
+    insertEvacuee(root, {"Peter", 7, 2});
+    insertEvacuee(root, {"Anna", 29, 1});
+    insertEvacuee(root, {"Linda", 34, 1});   // duplicate on purpose
+
+    TreeNode* found = searchEvacuee(root, "Brian");
+    if (found) cout << "Found: " << found->data.name << ", age " << found->data.age << endl;
+    else cout << "Brian not found" << endl;
+
+    found = searchEvacuee(root, "Mark");
+    if (found) cout << "Found: " << found->data.name << endl;
+    else cout << "Mark not found" << endl;
+    // ---- end test ----
+
     return 0;
 }
+
