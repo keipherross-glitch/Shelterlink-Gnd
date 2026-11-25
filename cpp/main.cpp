@@ -93,27 +93,73 @@ bool dequeue(Queue& q, string& name) {
 
 // ---------- Step 3: Linked list of shelters ----------
 void addShelter(Shelter*& head, int id, const string& name, int capacity) {
-    // TODO
+    Shelter* s = new Shelter;
+    s->id = id;
+    s->name = name;
+    s->capacity = capacity;
+    s->occupied = 0;
+    s->next = head;     // new shelter points at the old first shelter
+    head = s;           // and becomes the new first shelter
 }
 
 Shelter* findShelter(Shelter* head, int id) {
-    // TODO: walk the list
-    return nullptr;
+    Shelter* cur = head;
+    while (cur != nullptr) {
+        if (cur->id == id) return cur;   // found it
+        cur = cur->next;                 // move to the next shelter
+    }
+    return nullptr;                      // reached the end, not found
 }
 
 // ---------- Step 4: Putting it together ----------
 // If the shelter has space: occupied++, set shelterId, insert into the BST.
 // If full: shelterId = 0, insert into the BST and enqueue the name.
 void registerEvacuee(TreeNode*& root, Shelter* head, int shelterId, Evacuee e) {
-    // TODO
+    Shelter* s = findShelter(head, shelterId);
+    if (s == nullptr) {
+        cout << "Shelter " << shelterId << " not found" << endl;
+        return;
+    }
+    if (searchEvacuee(root, e.name) != nullptr) {
+        cout << "Already registered: " << e.name << endl;
+        return;
+    }
+    if (s->occupied < s->capacity) {
+        e.shelterId = shelterId;          // housed
+        s->occupied++;
+        insertEvacuee(root, e);
+    } else {
+        e.shelterId = 0;                  // waiting
+        insertEvacuee(root, e);
+        enqueue(s->waiting, e.name);
+    }
 }
+
 
 // Mark the evacuee discharged, occupied--, then admit the next name from the
 // waiting list (if any): look them up in the BST and update their shelterId.
 void discharge(TreeNode* root, Shelter* head, const string& name) {
-    // TODO
-}
+    TreeNode* node = searchEvacuee(root, name);
+    if (node == nullptr) {
+        cout << name << " not found" << endl;
+        return;
+    }
+    if (node->data.shelterId <= 0) {
+        cout << name << " is not in a shelter" << endl;
+        return;
+    }
+    Shelter* s = findShelter(head, node->data.shelterId);
+    node->data.shelterId = -1;            // discharged
+    s->occupied--;
 
+    string next;
+    if (dequeue(s->waiting, next)) {      // someone is waiting
+        TreeNode* n = searchEvacuee(root, next);
+        n->data.shelterId = s->id;
+        s->occupied++;
+        cout << next << " moved from the waiting list into " << s->name << endl;
+    }
+}
 // ---------- Step 5: Menu ----------
 int main() {
     TreeNode* root = nullptr;
@@ -140,6 +186,25 @@ int main() {
  enqueue(q, "Brian");
  string n;
  while (dequeue(q, n)) cout << "Admitted: " << n << endl;
+
+ addShelter(shelters, 1, "Grand Anse Primary", 2);
+addShelter(shelters, 2, "St Andrew's Church", 3);
+
+Shelter* s = findShelter(shelters, 1);
+if (s) cout << "Shelter " << s->id << ": " << s->name << ", capacity " << s->capacity << endl;
+else cout << "Shelter 1 not found" << endl;
+
+s = findShelter(shelters, 9);
+cout << (s ? "Found 9" : "Shelter 9 not found") << endl;
+
+registerEvacuee(root, shelters, 1, {"Cora", 41, 0});
+registerEvacuee(root, shelters, 1, {"Dale", 25, 0});
+registerEvacuee(root, shelters, 1, {"Eve", 60, 0});
+cout << "Eve shelterId: " << searchEvacuee(root, "Eve")->data.shelterId << endl;
+discharge(root, shelters, "Cora");
+cout << "Eve shelterId: " << searchEvacuee(root, "Eve")->data.shelterId << endl;
+cout << "Cora shelterId: " << searchEvacuee(root, "Cora")->data.shelterId << endl;
+cout << "Shelter 1 occupied: " << findShelter(shelters, 1)->occupied << endl;
     return 0;
 }
 
