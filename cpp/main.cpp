@@ -69,13 +69,26 @@ void insertEvacuee(TreeNode*& root, const Evacuee& e) {
 }
 // ---------- Step 2: Queue ----------
 void enqueue(Queue& q, const string& name) {
-    // TODO: add at the back (watch the empty-queue case)
+    QueueNode* node = new QueueNode{name, nullptr};
+    if (q.front == nullptr) {      // queue is empty
+        q.front = node;
+        q.back = node;
+    } else {
+        q.back->next = node;       // link after the current last node
+        q.back = node;             // the new node is now the last
+    }
 }
+
 
 // Returns false if the queue is empty, otherwise puts the front name in 'name'.
 bool dequeue(Queue& q, string& name) {
-    // TODO: remove from the front (watch the case where the queue becomes empty)
-    return false;
+    if (q.front == nullptr) return false;   // nothing to remove
+    QueueNode* old = q.front;
+    name = old->name;                       // hand the name back to the caller
+    q.front = q.front->next;                // move the front along
+    if (q.front == nullptr) q.back = nullptr;   // queue is now empty
+    delete old;
+    return true;
 }
 
 // ---------- Step 3: Linked list of shelters ----------
@@ -122,6 +135,11 @@ int main() {
     else cout << "Mark not found" << endl;
     // ---- end test ----
 
+  Queue q;
+ enqueue(q, "Linda");
+ enqueue(q, "Brian");
+ string n;
+ while (dequeue(q, n)) cout << "Admitted: " << n << endl;
     return 0;
 }
 
