@@ -161,50 +161,112 @@ void discharge(TreeNode* root, Shelter* head, const string& name) {
     }
 }
 // ---------- Step 5: Menu ----------
+ int countWaiting(const Queue& q) {
+    int n = 0;
+    for (QueueNode* cur = q.front; cur != nullptr; cur = cur->next) n++;
+    return n;
+}
+
+void showShelters(Shelter* head) {
+    if (head == nullptr) {
+        cout << "No shelters registered." << endl;
+        return;
+    }
+    for (Shelter* s = head; s != nullptr; s = s->next) {
+        cout << s->id << ". " << s->name << " - " << s->occupied << "/" << s->capacity
+             << " housed, " << countWaiting(s->waiting) << " waiting" << endl;
+    }
+}
+
+string describe(const Evacuee& e, Shelter* head) {
+    if (e.shelterId > 0) {
+        Shelter* s = findShelter(head, e.shelterId);
+        return "housed in " + (s ? s->name : string("unknown shelter"));
+    }
+    if (e.shelterId == 0) return "on the waiting list";
+    return "discharged";
+}
+
+int readInt(const string& prompt) {
+    int x;
+    cout << prompt;
+    while (!(cin >> x)) {
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cout << "Please enter a number: ";
+    }
+    cin.ignore(1000, '\n');
+    return x;
+}
+
 int main() {
     TreeNode* root = nullptr;
     Shelter* shelters = nullptr;
+    int choice = -1;
 
-    // ---- temporary BST test ----
-    insertEvacuee(root, {"Linda", 34, 1});
-    insertEvacuee(root, {"Brian", 52, 1});
-    insertEvacuee(root, {"Peter", 7, 2});
-    insertEvacuee(root, {"Anna", 29, 1});
-    insertEvacuee(root, {"Linda", 34, 1});   // duplicate on purpose
+    do {
+        cout << "\n=== ShelterLink Grenada ===\n"
+             << "1. Add shelter\n2. Register evacuee\n3. Search by name\n"
+             << "4. Discharge evacuee\n5. Show shelters\n0. Exit\n";
+        choice = readInt("Choice: ");
 
-    TreeNode* found = searchEvacuee(root, "Brian");
-    if (found) cout << "Found: " << found->data.name << ", age " << found->data.age << endl;
-    else cout << "Brian not found" << endl;
+        switch (choice) {
+        case 1: {
+            int id = readInt("Shelter id: ");
+            if (findShelter(shelters, id) != nullptr) {
+                cout << "That shelter id already exists." << endl;
+                break;
+            }
+            string name;
+            cout << "Shelter name: ";
+            getline(cin, name);
+            int cap = readInt("Capacity: ");
+            if (cap <= 0) {
+                cout << "Capacity must be more than 0." << endl;
+                break;
+            }
+            addShelter(shelters, id, name, cap);
+            cout << "Shelter added." << endl;
+            break;
+        }
+        case 2: {
+            int sid = readInt("Shelter id: ");
+            string name;
+            cout << "Evacuee name: ";
+            getline(cin, name);
+            int age = readInt("Age: ");
+            registerEvacuee(root, shelters, sid, {name, age, 0});
+            TreeNode* n = searchEvacuee(root, name);
+            if (n != nullptr) cout << name << " is " << describe(n->data, shelters) << "." << endl;
+            break;
+        }
+        case 3: {
+            string name;
+            cout << "Name to search: ";
+            getline(cin, name);
+            TreeNode* n = searchEvacuee(root, name);
+            if (n == nullptr) cout << name << " is not registered." << endl;
+            else cout << n->data.name << ", age " << n->data.age << ": "
+                      << describe(n->data, shelters) << "." << endl;
+            break;
+        }
+        case 4: {
+            string name;
+            cout << "Name to discharge: ";
+            getline(cin, name);
+            discharge(root, shelters, name);
+            break;
+        }
+        case 5:
+            showShelters(shelters);
+            break;
+        case 0:
+            cout << "Goodbye." << endl;
+            break;
+        default:
+            cout << "Invalid choice." << endl;
+        }
+    } while (choice != 0);
 
-    found = searchEvacuee(root, "Mark");
-    if (found) cout << "Found: " << found->data.name << endl;
-    else cout << "Mark not found" << endl;
-    // ---- end test ----
-
-  Queue q;
- enqueue(q, "Linda");
- enqueue(q, "Brian");
- string n;
- while (dequeue(q, n)) cout << "Admitted: " << n << endl;
-
- addShelter(shelters, 1, "Grand Anse Primary", 2);
-addShelter(shelters, 2, "St Andrew's Church", 3);
-
-Shelter* s = findShelter(shelters, 1);
-if (s) cout << "Shelter " << s->id << ": " << s->name << ", capacity " << s->capacity << endl;
-else cout << "Shelter 1 not found" << endl;
-
-s = findShelter(shelters, 9);
-cout << (s ? "Found 9" : "Shelter 9 not found") << endl;
-
-registerEvacuee(root, shelters, 1, {"Cora", 41, 0});
-registerEvacuee(root, shelters, 1, {"Dale", 25, 0});
-registerEvacuee(root, shelters, 1, {"Eve", 60, 0});
-cout << "Eve shelterId: " << searchEvacuee(root, "Eve")->data.shelterId << endl;
-discharge(root, shelters, "Cora");
-cout << "Eve shelterId: " << searchEvacuee(root, "Eve")->data.shelterId << endl;
-cout << "Cora shelterId: " << searchEvacuee(root, "Cora")->data.shelterId << endl;
-cout << "Shelter 1 occupied: " << findShelter(shelters, 1)->occupied << endl;
     return 0;
 }
-
