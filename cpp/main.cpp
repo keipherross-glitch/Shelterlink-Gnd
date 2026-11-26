@@ -198,6 +198,50 @@ int readInt(const string& prompt) {
     cin.ignore(1000, '\n');
     return x;
 }
+int countEvacuees(TreeNode* root) {
+    if (root == nullptr) return 0;
+    return 1 + countEvacuees(root->left) + countEvacuees(root->right);
+}
+
+void collectInOrder(TreeNode* root, Evacuee arr[], int& idx) {
+    if (root == nullptr) return;
+    collectInOrder(root->left, arr, idx);
+    arr[idx++] = root->data;
+    collectInOrder(root->right, arr, idx);
+}
+
+void bubbleSort(Evacuee arr[], int n, long long& comparisons) {
+    for (int i = 0; i < n - 1; i++) {
+        bool swapped = false;
+        for (int j = 0; j < n - 1 - i; j++) {
+            comparisons++;
+            if (arr[j].age < arr[j + 1].age) {
+                Evacuee temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+                swapped = true;
+            }
+        }
+        if (!swapped) break;
+    }
+}
+
+void insertionSort(Evacuee arr[], int n, long long& comparisons) {
+    for (int i = 1; i < n; i++) {
+        Evacuee key = arr[i];
+        int j = i - 1;
+        while (j >= 0) {
+            comparisons++;
+            if (arr[j].age < key.age) {
+                arr[j + 1] = arr[j];
+                j--;
+            } else {
+                break;
+            }
+        }
+        arr[j + 1] = key;
+    }
+}
 
 int main() {
     TreeNode* root = nullptr;
@@ -207,7 +251,7 @@ int main() {
     do {
         cout << "\n=== ShelterLink Grenada ===\n"
              << "1. Add shelter\n2. Register evacuee\n3. Search by name\n"
-             << "4. Discharge evacuee\n5. Show shelters\n0. Exit\n";
+             << "4. Discharge evacuee\n5. Show shelters\n6. List evacuees by age (compare sorts)\n0. Exit\n";
         choice = readInt("Choice: ");
 
         switch (choice) {
@@ -250,7 +294,7 @@ int main() {
                       << describe(n->data, shelters) << "." << endl;
             break;
         }
-        case 4: {
+       case 4: {
             string name;
             cout << "Name to discharge: ";
             getline(cin, name);
@@ -260,6 +304,33 @@ int main() {
         case 5:
             showShelters(shelters);
             break;
+        case 6: {
+            int n = countEvacuees(root);
+            if (n == 0) {
+                cout << "No evacuees registered." << endl;
+                break;
+            }
+            Evacuee* a = new Evacuee[n];
+            Evacuee* b = new Evacuee[n];
+            int idx = 0;
+            collectInOrder(root, a, idx);
+            for (int i = 0; i < n; i++) b[i] = a[i];
+
+            long long bubbleCmp = 0, insertCmp = 0;
+            bubbleSort(a, n, bubbleCmp);
+            insertionSort(b, n, insertCmp);
+
+            cout << "Evacuees by age, oldest first:" << endl;
+            for (int i = 0; i < n; i++)
+                cout << i + 1 << ". " << a[i].name << ", age " << a[i].age
+                     << " - " << describe(a[i], shelters) << endl;
+            cout << "Bubble sort: " << bubbleCmp << " comparisons" << endl;
+            cout << "Insertion sort: " << insertCmp << " comparisons" << endl;
+
+            delete[] a;
+            delete[] b;
+            break;
+        }
         case 0:
             cout << "Goodbye." << endl;
             break;
